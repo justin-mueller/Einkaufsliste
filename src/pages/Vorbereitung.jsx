@@ -77,6 +77,13 @@ const Page1 = () => {
   // Filter articles to exclude those already in today's list
   const availableArticles = articles.filter(article => !todayItemIds.has(article.id));
 
+  // Sort available articles by numeric category (ascending)
+  const sortedAvailableArticles = [...availableArticles].sort((a, b) => {
+    const ca = parseInt(a.category || '0', 10) || 0;
+    const cb = parseInt(b.category || '0', 10) || 0;
+    return ca - cb || a.name.localeCompare(b.name);
+  });
+
   // Function to remove item from today's list
   const removeFromTodayList = async (itemId) => {
     try {
@@ -315,7 +322,7 @@ const Page1 = () => {
         >
           <Table variant="simple" minW="auto" w="100%">
             <Tbody>
-            {availableArticles.map(article => (
+            {sortedAvailableArticles.map(article => (
               <Tr key={article.id}>
                 <Td w={{ base: "40px", md: "40px" }} flexShrink={0}>
                   <IconButton

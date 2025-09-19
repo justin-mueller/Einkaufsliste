@@ -30,7 +30,7 @@ import {
   WrapItem,
   Divider
 } from '@chakra-ui/react';
-import { AddIcon, DeleteIcon, StarIcon } from '@chakra-ui/icons';
+import { AddIcon, DeleteIcon, StarIcon, EditIcon, DownloadIcon } from '@chakra-ui/icons';
 import { getCategoryColor } from '../config/categoryColors';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -46,6 +46,9 @@ const Rezepte = () => {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
   const toast = useToast();
+  const [editingRecipeId, setEditingRecipeId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editSelectedArticles, setEditSelectedArticles] = useState([]);
 
   useEffect(() => {
     // Fetch recipes, articles and categories data
@@ -188,6 +191,53 @@ const Rezepte = () => {
   const handleDeleteClick = (recipe) => {
     setRecipeToDelete(recipe);
     setIsConfirmDialogOpen(true);
+  };
+
+  // Start editing a recipe
+  const startEditRecipe = (recipe) => {
+    setEditingRecipeId(recipe.id);
+    setEditName(recipe.name);
+    // map item ids to article objects
+    const selected = recipe.items.map(id => articleMap[id]).filter(Boolean);
+    setEditSelectedArticles(selected);
+  };
+
+  // Cancel editing
+  const cancelEdit = () => {
+    setEditingRecipeId(null);
+    setEditName('');
+    setEditSelectedArticles([]);
+  };
+
+  // Save edited recipe
+  const saveEditedRecipe = async () => {
+    if (!editName.trim() || editSelectedArticles.length === 0) {
+      toast({ title: 'Fehler', description: 'Bitte Namen und mindestens einen Artikel angeben.', status: 'error', duration: 2500, isClosable: true });
+      return;
+    }
+
+    try {
+      const updatedRecipes = recipes.map(r => r.id === editingRecipeId ? { ...r, name: editName.trim(), items: editSelectedArticles.map(a => a.id) } : r);
+      setRecipes(updatedRecipes);
+
+      // Persist
+      const response = await fetch('/api/saveRecipes.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRecipes),
+      });
+
+      if (!response.ok) throw new Error('Failed to save data to server');
+      const result = await response.json();
+      if (result.status !== 'success') throw new Error('Server returned error status');
+
+      toast({ title: 'Erfolg', description: 'Rezept erfolgreich aktualisiert!', status: 'success', duration: 2000, isClosable: true });
+      cancelEdit();
+    } catch (err) {
+      console.error('Error saving recipe edit:', err);
+      setRecipes(recipes);
+      toast({ title: 'Fehler', description: 'Fehler beim Speichern des Rezepts. Bitte versuchen Sie es erneut.', status: 'error', duration: 3000, isClosable: true });
+    }
   };
 
   // Function to close confirmation dialog
@@ -442,12 +492,20 @@ const Rezepte = () => {
                   <HStack spacing={2} flexShrink={0}>
                     <IconButton
                       aria-label="Zum heutigen Einkauf hinzufügen"
-                      icon={<StarIcon />}
+                      icon={<DownloadIcon />}
                       size="sm"
                       colorScheme="purple"
                       variant="outline"
                       onClick={() => addRecipeToTodayList(recipe)}
                       title="Zum heutigen Einkauf hinzufügen"
+                    />
+                    <IconButton
+                      aria-label="Rezept bearbeiten"
+                      icon={<EditIcon />}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startEditRecipe(recipe)}
+                      title="Rezept bearbeiten"
                     />
                     <IconButton
                       aria-label="Rezept entfernen"
@@ -459,25 +517,71 @@ const Rezepte = () => {
                     />
                   </HStack>
                 </HStack>
-              <Text fontSize="sm" color="gray.600" mb={3}>
-                Zutaten ({recipe.items.length}):
-              </Text>
-              <Wrap spacing={2}>
-                {recipe.items.map(itemId => {
-                  const article = articleMap[itemId];
-                  if (!article) return null;
+              {editingRecipeId === recipe.id ? (
+                // Inline edit form
+                <Box>
+                  <FormControl mb={3}>
+                    <FormLabel>Name</FormLabel>
+                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+                  </FormControl>
 
-                  return (
-                    <WrapItem key={itemId}>
-                      <Tag size="md" variant="subtle" colorScheme={getCategoryColor(article.category)}>
-                        <TagLabel>
-                          {article.name}
-                        </TagLabel>
-                      </Tag>
-                    </WrapItem>
-                  );
-                })}
-              </Wrap>
+                  <FormControl mb={3}>
+                    <FormLabel>Artikel hinzufügen</FormLabel>
+                    <HStack>
+                      <Select placeholder="Artikel auswählen" onChange={(e) => setEditSelectedArticles(prev => {
+                        const a = articles.find(x => x.id === e.target.value);
+                        if (!a) return prev;
+                        if (prev.some(x => x.id === a.id)) return prev;
+                        return [...prev, a];
+                      })}>
+                        {articles.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </Select>
+                      <Button size="sm" onClick={() => setEditSelectedArticles([])}>Clear</Button>
+                    </HStack>
+                  </FormControl>
+
+                  <Box mb={3}>
+                    <Text fontSize="sm" color="gray.600" mb={2}>Ausgewählte Artikel:</Text>
+                    <Wrap spacing={2}>
+                      {editSelectedArticles.map(a => (
+                        <WrapItem key={a.id}>
+                          <Tag size="md" variant="solid" colorScheme={getCategoryColor(a.category)}>
+                            <TagLabel>{a.name}</TagLabel>
+                            <TagCloseButton onClick={() => setEditSelectedArticles(prev => prev.filter(x => x.id !== a.id))} />
+                          </Tag>
+                        </WrapItem>
+                      ))}
+                    </Wrap>
+                  </Box>
+
+                  <HStack spacing={2}>
+                    <Button size="sm" colorScheme="blue" onClick={saveEditedRecipe}>Speichern</Button>
+                    <Button size="sm" variant="outline" onClick={cancelEdit}>Abbrechen</Button>
+                  </HStack>
+                </Box>
+              ) : (
+                <>
+                  <Text fontSize="sm" color="gray.600" mb={3}>
+                    Zutaten ({recipe.items.length}):
+                  </Text>
+                  <Wrap spacing={2}>
+                    {recipe.items.map(itemId => {
+                      const article = articleMap[itemId];
+                      if (!article) return null;
+
+                      return (
+                        <WrapItem key={itemId}>
+                          <Tag size="md" variant="subtle" colorScheme={getCategoryColor(article.category)}>
+                            <TagLabel>
+                              {article.name}
+                            </TagLabel>
+                          </Tag>
+                        </WrapItem>
+                      );
+                    })}
+                  </Wrap>
+                </>
+              )}
               </VStack>
             </Box>
           ))}

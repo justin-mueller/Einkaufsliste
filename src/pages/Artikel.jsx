@@ -70,6 +70,13 @@ const Page3 = () => {
     return map;
   }, {});
 
+  // Sort articles by numeric category (ascending)
+  const sortedArticles = [...articles].sort((a, b) => {
+    const ca = parseInt(a.category || '0', 10) || 0;
+    const cb = parseInt(b.category || '0', 10) || 0;
+    return ca - cb || a.name.localeCompare(b.name);
+  });
+
   // Function to add new article
   const addArticle = async () => {
     if (!newArticleName.trim() || !selectedCategory) {
@@ -281,7 +288,7 @@ const Page3 = () => {
         >
           <Table variant="simple" minW="auto" w="100%">
             <Tbody>
-            {articles.map(article => (
+            {sortedArticles.map(article => (
               <Tr key={article.id}>
                 <Td w={{ base: "50px", md: "80px" }} flexShrink={0}>
                   <IconButton

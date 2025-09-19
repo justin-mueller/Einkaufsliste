@@ -25,12 +25,12 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/index.html',
     }),
-    new CopyWebpackPlugin({
-      patterns: [
-        { from: "data", to: "data" },    // copies data/ → dist/data/
-        { from: "api", to: "api" },      // copies api/ → dist/api/
-      ],
-    }),
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: "data", to: "data", noErrorOnMissing: true },    // copies data/ → dist/data/ (don't fail if missing)
+          { from: "api", to: "api" },      // copies api/ → dist/api/
+        ],
+      }),
   ],
 
   performance: {

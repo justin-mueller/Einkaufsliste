@@ -132,6 +132,28 @@ const Page2 = () => {
     }
   };
 
+  // Sort items by numeric category (ascending)
+  // Show unchecked items first (sorted), then checked items (sorted) so checked items float to bottom
+  const uncheckedSorted = items
+    .filter(i => !i.checked)
+    .slice()
+    .sort((a, b) => {
+      const ca = parseInt(a.category || '0', 10) || 0;
+      const cb = parseInt(b.category || '0', 10) || 0;
+      return ca - cb || a.name.localeCompare(b.name);
+    });
+
+  const checkedSorted = items
+    .filter(i => i.checked)
+    .slice()
+    .sort((a, b) => {
+      const ca = parseInt(a.category || '0', 10) || 0;
+      const cb = parseInt(b.category || '0', 10) || 0;
+      return ca - cb || a.name.localeCompare(b.name);
+    });
+
+  const sortedItems = [...uncheckedSorted, ...checkedSorted];
+
   if (loading) {
     return (
       <Box textAlign="center" mt={10}>
@@ -167,7 +189,7 @@ const Page2 = () => {
         >
           <Table variant="simple" minW="auto" w="100%">
             <Tbody>
-            {items.map(item => (
+            {sortedItems.map(item => (
               <Tr 
                 key={item.id}
                 sx={animatingRows.has(item.id) ? {

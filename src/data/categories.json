@@ -1,0 +1,27 @@
+[
+  
+  { "id": "1", "name": "Gemüse" },
+  { "id": "2", "name": "Obst" },
+  { "id": "3", "name": "Gewürze & Kräuter" },
+  { "id": "4", "name": "Öle" },
+  { "id": "5", "name": "Konserven" },
+  { "id": "6", "name": "Backwaren" },
+  { "id": "7", "name": "Frühstück & Cerealien" },
+  { "id": "8", "name": "Teigwaren & Reis" },
+  { "id": "9", "name": "Aufstriche" },
+  { "id": "10", "name": "Backzutaten" },
+  { "id": "11", "name": "Nüsse & Trockenfrüchte" },
+  { "id": "12", "name": "Suppen & Saucen" },
+  { "id": "13", "name": "Fertiggerichte" },
+  { "id": "14", "name": "Fleisch" },
+  { "id": "15", "name": "Käse" },
+  { "id": "16", "name": "Wurstwaren" },
+  { "id": "17", "name": "Fisch & Meeresfrüchte" },
+  { "id": "18", "name": "Tiefkühlprodukte" },
+  { "id": "19", "name": "Milchprodukte" },
+  { "id": "20", "name": "Süßwaren & Snacks" },
+  { "id": "21", "name": "Getränke" },
+  { "id": "22", "name": "Hygieneartikel" },
+  { "id": "23", "name": "Haushaltswaren" },
+  { "id": "24", "name": "Sonstiges" }
+]
