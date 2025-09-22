@@ -22,11 +22,12 @@ import { keyframes } from '@emotion/react';
 import { CheckIcon, StarIcon } from '@chakra-ui/icons';
 import { getCategoryColor } from '../config/categoryColors';
 
-// Celebration animation keyframes
-const rowBounceAnimation = keyframes`
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0); }
+// Rainbow flash animation keyframes
+const rainbowFlashAnimation = (color) => keyframes`
+  0% { background-color: transparent; }
+  25% { background-color: ${color}; }
+  75% { background-color: ${color}; }
+  100% { background-color: transparent; }
 `;
 
 const Page2 = () => {
@@ -35,7 +36,7 @@ const Page2 = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [animatingRows, setAnimatingRows] = useState(new Set());
+  const [animatingRows, setAnimatingRows] = useState(new Map());
 
   useEffect(() => {
     // Fetch items and categories data
@@ -91,20 +92,33 @@ const Page2 = () => {
       
       // Trigger celebration if this completes the list
       if (willCompleteList) {
-        // Start row animations from top to bottom
-        const rowIds = items.map(item => item.id);
-        setAnimatingRows(new Set());
+        // Rainbow colors in order
+        const rainbowColors = ['#ff0000', '#ff8000', '#ffff00', '#00ff00', '#0080ff', '#4000ff', '#8000ff'];
         
-        rowIds.forEach((rowId, index) => {
+        // Get the sorted order of items at completion time
+        const completedSortedItems = updatedItems
+          .slice()
+          .sort((a, b) => {
+            const ca = parseInt(a.category || '0', 10) || 0;
+            const cb = parseInt(b.category || '0', 10) || 0;
+            return ca - cb || a.name.localeCompare(b.name);
+          });
+        
+        // Start rainbow flash animations from top to bottom
+        setAnimatingRows(new Map());
+        
+        completedSortedItems.forEach((item, index) => {
           setTimeout(() => {
-            setAnimatingRows(prev => new Set([...prev, rowId]));
-          }, index * 200); // 200ms delay between each row
+            const colorIndex = index % rainbowColors.length;
+            const color = rainbowColors[colorIndex];
+            setAnimatingRows(prev => new Map([...prev, [item.id, color]]));
+          }, index * 150); // 150ms delay between each row
         });
         
         // Clear animations after they complete
         setTimeout(() => {
-          setAnimatingRows(new Set());
-        }, rowIds.length * 200 + 600); // Total duration
+          setAnimatingRows(new Map());
+        }, completedSortedItems.length * 150 + 1000); // Total duration
       }
       
       // Save updated data to server
@@ -193,7 +207,7 @@ const Page2 = () => {
               <Tr 
                 key={item.id}
                 sx={animatingRows.has(item.id) ? {
-                  animation: `${rowBounceAnimation} 0.6s ease-in-out`
+                  animation: `${rainbowFlashAnimation(animatingRows.get(item.id))} 1s ease-in-out`
                 } : {}}
               >
                 <Td w={{ base: "50px", md: "80px" }} flexShrink={0}>
